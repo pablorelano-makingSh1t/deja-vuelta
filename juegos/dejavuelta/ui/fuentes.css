@@ -1,0 +1,9 @@
+/* Tipografía propia, autoalojada (SIL OFL 1.1: ver assets/fuentes/OFL-*.txt).
+ * Fraunces (Undercase Type): serif «blanda» con aire de libro viejo, para títulos, cifras y la Crónica.
+ * Bricolage Grotesque (Mathieu Triay): grotesca con carácter, para la interfaz. */
+@font-face { font-family: 'Fraunces'; src: url('../assets/fuentes/fraunces-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Fraunces'; src: url('../assets/fuentes/fraunces-latin-400-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Fraunces'; src: url('../assets/fuentes/fraunces-latin-600-normal.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Bricolage'; src: url('../assets/fuentes/bricolage-grotesque-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Bricolage'; src: url('../assets/fuentes/bricolage-grotesque-latin-600-normal.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Bricolage'; src: url('../assets/fuentes/bricolage-grotesque-latin-800-normal.woff2') format('woff2'); font-weight: 800; font-style: normal; font-display: swap; }

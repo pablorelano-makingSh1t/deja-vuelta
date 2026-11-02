@@ -1,0 +1,26 @@
+/* Estilos base del motor. Cada juego sobrescribe las variables. */
+:root {
+  --inc-fondo: #111; --inc-texto: #eee; --inc-acento: #4fd1c5; --inc-panel: #1c1c1c;
+  --inc-borde: #333; --inc-peligro: #e05252; --inc-fuente: system-ui, sans-serif; --inc-radio: 6px;
+}
+.inc-toasts { position: fixed; right: 1rem; bottom: 1rem; display: flex; flex-direction: column; gap: .5rem; z-index: 1000; pointer-events: none; }
+.inc-toast { background: var(--inc-panel); color: var(--inc-texto); border: 1px solid var(--inc-acento); border-radius: var(--inc-radio);
+  padding: .6rem .9rem; font: 14px var(--inc-fuente); box-shadow: 0 4px 16px #0008; transition: opacity .4s, transform .4s; }
+.inc-toast.fuera { opacity: 0; transform: translateY(8px); }
+.inc-modal-fondo { position: fixed; inset: 0; background: #000a; display: grid; place-items: center; z-index: 900; }
+.inc-modal { background: var(--inc-panel); color: var(--inc-texto); border: 1px solid var(--inc-borde); border-radius: var(--inc-radio);
+  padding: 1.2rem 1.4rem; min-width: 300px; max-width: min(520px, 92vw); max-height: 86vh; overflow: auto; font-family: var(--inc-fuente); }
+.inc-modal h2 { margin: 0 0 .8rem; font-size: 1.2rem; }
+.inc-modal-botones { display: flex; gap: .5rem; justify-content: flex-end; margin-top: 1rem; flex-wrap: wrap; }
+.inc-ajustes { display: grid; gap: .6rem; }
+.inc-ajustes label { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.inc-fila { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .4rem; }
+.inc-modal button, .inc-recompensa { font: inherit; cursor: pointer; background: transparent; color: var(--inc-texto);
+  border: 1px solid var(--inc-borde); border-radius: var(--inc-radio); padding: .35rem .7rem; }
+.inc-modal button:hover:not(:disabled) { border-color: var(--inc-acento); }
+.inc-modal button.peligro { border-color: var(--inc-peligro); color: var(--inc-peligro); }
+.inc-video { border-color: var(--inc-acento) !important; }
+.inc-recompensa:disabled { opacity: .5; cursor: default; }
+.inc-lista { margin: .4rem 0; padding-left: 1.2rem; }
+@media (prefers-reduced-motion: reduce) { * { animation-duration: 0s !important; transition-duration: 0s !important; } }
+.inc-en-contenedor { position: absolute; } /* el contenedor debe tener position: relative */

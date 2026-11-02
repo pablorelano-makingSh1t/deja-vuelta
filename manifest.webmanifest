@@ -1,0 +1,30 @@
+{
+  "name": "Déjà Vuelta",
+  "short_name": "Déjà Vuelta",
+  "description": "Una civilización, una máquina del tiempo rota y el Año Uno. Otra vez.",
+  "lang": "es",
+  "theme_color": "#16110d",
+  "background_color": "#16110d",
+  "orientation": "portrait",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "juegos/dejavuelta/assets/icono-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "juegos/dejavuelta/assets/icono-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "juegos/dejavuelta/assets/icono-mascara-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
