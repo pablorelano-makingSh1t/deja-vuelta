@@ -260,7 +260,7 @@ body {
 (() => {
   'use strict';
 
-  const VERSION = 1;
+  const VERSION = 2;
   const TAU = Math.PI * 2;
   const $ = (id) => document.getElementById(id);
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -400,7 +400,7 @@ body {
   let W = 0, H = 0, u = 1, dpr = 1, cielo = null;
   let estado = 'inicio'; // inicio | jugando | pausa | fin
   let puntos = 0, tiempo = 0, reloj = 0, desplaz = 0;
-  let tMurci = 0, tLuci = 0, sacudida = 0, finVisible = false, haArrastrado = false, tPista = 0;
+  let tMurci = 0, tLuci = 0, sacudida = 0, finVisible = false, haArrastrado = false, tPista = 0, tFin = 0;
   const J = { x: 0, obj: 0, y: 0, incl: 0 }; // el farolillo
   const murcis = [], lucis = [], chispas = [], rotulos = [];
   const teclas = { izq: false, der: false };
@@ -486,7 +486,7 @@ body {
     pintarEstado();
   }
   function chocar() {
-    estado = 'fin'; arrastre = null;
+    estado = 'fin'; arrastre = null; tFin = 0;
     sacudida = pocoMovimiento ? 0 : 0.35;
     estallido(J.x, J.y, C.brasa, 24);
     try { if (navigator.vibrate) navigator.vibrate(90); } catch (e) { /* sin vibración */ }
@@ -526,6 +526,9 @@ body {
     } else if (estado === 'fin') {
       J.y = Math.min(J.y + 80 * u * dt, H + 80);
       J.incl += 0.9 * dt;
+      // Los murciélagos y las luciérnagas se retiran para no tapar el resultado.
+      tFin += dt;
+      if (tFin > 0.5) { murcis.length = 0; lucis.length = 0; }
     }
 
     desplaz += (jugando ? v * 0.05 : H * 0.006) * dt;
@@ -712,8 +715,10 @@ body {
       ctx.translate(azar(-m, m), azar(-m, m));
     }
     dibujarFondo();
+    ctx.globalAlpha = estado === 'fin' ? clamp(1 - tFin / 0.5, 0, 1) : 1;
     for (const l of lucis) dibujarLuci(l);
     for (const b of murcis) dibujarMurci(b);
+    ctx.globalAlpha = 1;
     dibujarFarol();
     for (const p of chispas) {
       ctx.globalAlpha = clamp(p.vida / p.max, 0, 1);
