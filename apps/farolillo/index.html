@@ -1,0 +1,846 @@
+<title>Farolillo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Figtree:wght@400;600;800&display=swap">
+<style>
+/* Composición: un cielo de anochecer a pantalla completa (canvas). El marcador va
+   arriba y los menús en la mitad inferior, donde llega el pulgar. Un solo aspecto,
+   oscuro por decisión: es de noche. */
+:root {
+  color-scheme: dark;
+  --noche: #1c1650;         /* alto del cielo */
+  --malva: #5b2a78;         /* media altura */
+  --ocaso: #c8583f;         /* horizonte */
+  --brasa: #f0805a;         /* contorno de los murciélagos, sombras de botón */
+  --papel: #ffdb8f;         /* papel del farolillo, cifras, botón principal */
+  --llama: #fff3cf;         /* núcleo de la llama */
+  --luci: #dcf58a;          /* luciérnagas, foco de teclado */
+  --tinta: #0e0a26;         /* siluetas y texto sobre papel */
+  --niebla: #f5efff;        /* texto sobre el cielo */
+  --niebla-suave: #cfc4ea;  /* texto secundario */
+  --velo: rgba(14, 10, 38, 0.58);
+  --velo-denso: rgba(14, 10, 38, 0.9);
+  --tinta-70: rgba(14, 10, 38, 0.7);
+  --papel-50: rgba(255, 219, 143, 0.5);
+  --f-rotulo: "Bagel Fat One", "Arial Rounded MT Bold", ui-rounded, system-ui, sans-serif;
+  --f-texto: "Figtree", ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--tinta);
+  color: var(--niebla);
+  font-family: var(--f-texto);
+  font-size: 17px;
+  line-height: 1.4;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+[hidden] { display: none !important; }
+
+.juego {
+  position: relative;
+  height: 100%;
+  min-height: 320px;
+  max-width: 560px;
+  margin-inline: auto;
+  overflow: hidden;
+  background: var(--noche);
+  touch-action: none;
+}
+.lienzo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Marcador */
+.hud {
+  position: absolute;
+  inset: 0 0 auto 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding-block: 12px 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.marcador { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.marcador__num {
+  font-family: var(--f-rotulo);
+  font-size: 52px;
+  line-height: 1;
+  color: var(--papel);
+  text-shadow: 0 3px 0 var(--tinta);
+  font-variant-numeric: tabular-nums;
+}
+.marcador__rec {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--niebla);
+  text-shadow: 0 1px 0 var(--tinta);
+}
+.btn-pausa {
+  flex: none;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: 2px solid var(--papel-50);
+  background: var(--tinta-70);
+  color: var(--papel);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+}
+.btn-pausa:active { background: var(--tinta); }
+
+.pista {
+  position: absolute;
+  left: 50%;
+  bottom: 30%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--tinta-70);
+  color: var(--niebla);
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Menús */
+.panel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 14px;
+  padding-block: 24px max(24px, 5%);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: linear-gradient(to top, var(--velo-denso) 0%, var(--velo) 58%, transparent 100%);
+}
+.panel--entra { animation: entra 0.22s ease-out both; }
+@keyframes entra { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .panel--entra { animation: none; } }
+
+.panel p, .panel ul, .panel h1, .panel h2 { margin: 0; }
+.titulo {
+  font-family: var(--f-rotulo);
+  font-weight: 400;
+  font-size: clamp(54px, 17vw, 92px);
+  line-height: 0.95;
+  color: var(--papel);
+  text-shadow: 0 4px 0 var(--brasa), 0 9px 0 var(--tinta);
+  text-wrap: balance;
+}
+.subtitulo {
+  font-family: var(--f-rotulo);
+  font-weight: 400;
+  font-size: clamp(34px, 10vw, 48px);
+  line-height: 1;
+  color: var(--papel);
+  text-shadow: 0 3px 0 var(--tinta);
+  text-wrap: balance;
+}
+.entrada { max-width: 32ch; }
+.reglas {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 15px;
+  color: var(--niebla-suave);
+}
+.reglas b { font-family: var(--f-rotulo); font-weight: 400; color: var(--luci); font-size: 18px; margin-right: 4px; }
+.resultado { font-family: var(--f-rotulo); font-size: clamp(64px, 22vw, 104px); line-height: 0.9; color: var(--papel); text-shadow: 0 4px 0 var(--tinta); font-variant-numeric: tabular-nums; }
+.resultado small { font-family: var(--f-texto); font-size: 17px; font-weight: 600; color: var(--niebla); text-shadow: none; letter-spacing: 0.02em; }
+.insignia {
+  align-self: flex-start;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--luci);
+  color: var(--tinta);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.pie { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 15px; font-weight: 600; }
+.pie b { color: var(--papel); font-variant-numeric: tabular-nums; }
+.version { color: var(--niebla-suave); font-weight: 400; font-size: 13px; }
+.guardado, .nota { font-size: 13px; color: var(--niebla-suave); min-height: 1.4em; }
+.nota { color: var(--luci); }
+
+.btn {
+  min-height: 62px;
+  border-radius: 18px;
+  border: 0;
+  padding: 0 24px;
+  font: 800 21px/1 var(--f-texto);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.btn--principal { background: var(--papel); color: var(--tinta); box-shadow: 0 5px 0 var(--brasa); margin-bottom: 5px; }
+.btn--principal:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--brasa); }
+.btn--secundario { background: var(--tinta-70); color: var(--niebla); border: 2px solid var(--niebla-suave); }
+.btn--secundario:active { background: var(--tinta); }
+.btn:focus-visible, .btn-pausa:focus-visible { outline: 3px solid var(--luci); outline-offset: 3px; }
+
+/* Pantallas bajas (móvil en horizontal) */
+@media (max-height: 520px) {
+  .titulo { font-size: 44px; }
+  .reglas, .entrada { display: none; }
+  .panel { gap: 10px; padding-block: 12px 14px; }
+  .btn { min-height: 52px; }
+  .resultado { font-size: 56px; }
+  .marcador__num { font-size: 40px; }
+}
+</style>
+
+<main class="juego" id="juego">
+  <canvas class="lienzo" id="lienzo" role="img" aria-label="Cielo de anochecer con un farolillo que sube entre murciélagos y luciérnagas"></canvas>
+
+  <header class="hud" id="hud" hidden>
+    <div class="marcador">
+      <output class="marcador__num" id="puntos" aria-label="Puntos">0</output>
+      <span class="marcador__rec">Récord <b data-record>0</b></span>
+    </div>
+    <button class="btn-pausa" id="btnPausa" type="button" aria-label="Pausar">
+      <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><rect x="5" y="4" width="5" height="16" rx="1.5" fill="currentColor"/><rect x="14" y="4" width="5" height="16" rx="1.5" fill="currentColor"/></svg>
+    </button>
+  </header>
+
+  <p class="pista" id="pista" hidden>Desliza el dedo a izquierda y derecha</p>
+
+  <section class="panel" id="panelInicio" aria-labelledby="titulo">
+    <h1 class="titulo" id="titulo">Farolillo</h1>
+    <p class="entrada">Desliza el dedo para guiar el farolillo mientras sube. Si lo toca un murciélago, se apaga.</p>
+    <ul class="reglas">
+      <li><b>+1</b>murciélago esquivado</li>
+      <li><b>+5</b>luciérnaga atrapada</li>
+    </ul>
+    <button class="btn btn--principal" id="btnJugar" type="button">Jugar</button>
+    <p class="pie"><span>Récord <b data-record>0</b></span><span class="version" id="version"></span></p>
+    <p class="guardado" data-guardado></p>
+  </section>
+
+  <section class="panel panel--entra" id="panelPausa" aria-labelledby="tituloPausa" hidden>
+    <h2 class="subtitulo" id="tituloPausa">En pausa</h2>
+    <p class="nota" id="notaActualizado" hidden>El juego se acaba de actualizar. Tu partida sigue donde la dejaste.</p>
+    <button class="btn btn--principal" id="btnSeguir" type="button">Seguir</button>
+    <button class="btn btn--secundario" id="btnReiniciar" type="button">Reiniciar</button>
+  </section>
+
+  <section class="panel panel--entra" id="panelFin" aria-labelledby="tituloFin" hidden>
+    <p class="insignia" id="insignia" hidden>Nuevo récord</p>
+    <h2 class="subtitulo" id="tituloFin">Se apagó la llama</h2>
+    <p class="resultado"><span id="puntosFin">0</span> <small>puntos</small></p>
+    <button class="btn btn--principal" id="btnOtra" type="button">Jugar otra vez</button>
+    <p class="pie"><span>Récord <b data-record>0</b></span></p>
+    <p class="guardado" data-guardado></p>
+  </section>
+</main>
+
+<script>
+(() => {
+  'use strict';
+
+  const VERSION = 1;
+  const TAU = Math.PI * 2;
+  const $ = (id) => document.getElementById(id);
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const azar = (a, b) => a + Math.random() * (b - a);
+  const espera = (ms) => new Promise((ok) => setTimeout(ok, ms));
+  const conLimite = (promesa, ms) => new Promise((ok, ko) => {
+    const t = setTimeout(() => ko({ code: 'tiempo_agotado' }), ms);
+    Promise.resolve(promesa).then(
+      (v) => { clearTimeout(t); ok(v); },
+      (e) => { clearTimeout(t); ko(e); },
+    );
+  });
+
+  const raiz = $('juego');
+  const lienzo = $('lienzo');
+  const ctx = lienzo.getContext('2d');
+  const hud = $('hud');
+  const puntosEl = $('puntos');
+  const btnPausa = $('btnPausa');
+  const pista = $('pista');
+  const panelInicio = $('panelInicio');
+  const panelPausa = $('panelPausa');
+  const panelFin = $('panelFin');
+  const notaActualizado = $('notaActualizado');
+  const pocoMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Los colores del canvas salen de los mismos tokens que el CSS.
+  const estilo = getComputedStyle(document.documentElement);
+  const C = {};
+  for (const n of ['noche', 'malva', 'ocaso', 'brasa', 'papel', 'llama', 'luci', 'tinta']) {
+    C[n] = estilo.getPropertyValue('--' + n).trim();
+  }
+  const conAlfa = (hex, a) => {
+    const n = parseInt(hex.slice(1), 16);
+    return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+  };
+
+  // ---------------------------------------------------------------- Guardado
+  // El récord se guarda en dos sitios cuando existen: la cuenta de Claude de quien
+  // juega (sirve en cualquier dispositivo) y este navegador (copia local). El texto
+  // bajo el botón dice siempre dónde ha quedado de verdad.
+  const CLAVE = 'farolillo:v1';
+  const G = { record: 0, local: false, nube: null, aviso: '', cola: Promise.resolve() };
+
+  function probarLocal() {
+    try {
+      const k = CLAVE + ':prueba';
+      localStorage.setItem(k, '1');
+      const ok = localStorage.getItem(k) === '1';
+      localStorage.removeItem(k);
+      return ok;
+    } catch (e) { return false; }
+  }
+  function leerLocal() {
+    try {
+      const d = JSON.parse(localStorage.getItem(CLAVE) || 'null');
+      return d && Number.isFinite(d.record) ? d.record : 0;
+    } catch (e) { return 0; }
+  }
+  function escribirLocal(valor) {
+    try {
+      localStorage.setItem(CLAVE, JSON.stringify({ record: valor, actualizado: new Date().toISOString() }));
+      return leerLocal() === valor;
+    } catch (e) { return false; }
+  }
+  const sanear = (v) => clamp(Math.floor(Number(v) || 0), 0, 9999999);
+
+  function escribirNube(valor) {
+    const ref = G.nube;
+    const datos = { record: valor, actualizado: new Date().toISOString() };
+    // Una escritura cada vez sobre el mismo documento.
+    const tarea = G.cola.then(async () => {
+      try {
+        await conLimite(ref.set(datos), 10000);
+        return true;
+      } catch (e) {
+        if (!e || e.code !== 'unavailable') return false;
+        await espera(400 + Math.random() * 600);
+        try { await conLimite(ref.set(datos), 10000); return true; } catch (e2) { return false; }
+      }
+    });
+    G.cola = tarea.then(() => {}, () => {});
+    return tarea;
+  }
+
+  async function conectarNube() {
+    const claude = window.claude;
+    if (!claude || typeof claude.use !== 'function') return;
+    try {
+      const [db, user] = await Promise.all([claude.use('db'), claude.use('user')]);
+      if (!db || !user) return;
+      const id = await user.id();
+      if (!id) return;
+      const ref = db.doc('data/users/' + id + '/farolillo');
+      const foto = await conLimite(ref.get(), 10000);
+      const remoto = foto.exists ? sanear((foto.data() || {}).record) : 0;
+      G.nube = ref;
+      if (remoto > G.record) {
+        G.record = remoto;
+        if (G.local) escribirLocal(remoto);
+        pintarRecord();
+      } else if (G.record > remoto) {
+        const ok = await escribirNube(G.record);
+        if (!ok) G.aviso = 'No se pudo guardar en tu cuenta. El récord queda solo en este navegador.';
+      }
+    } catch (e) {
+      G.nube = null; // sin cuenta en esta visita: sigue la copia local
+    }
+    pintarGuardado();
+  }
+
+  async function registrarRecord(valor) {
+    G.record = valor;
+    pintarRecord();
+    const okLocal = G.local && escribirLocal(valor);
+    const okNube = G.nube ? await escribirNube(valor) : false;
+    if (okNube || (!G.nube && okLocal)) G.aviso = '';
+    else if (okLocal) G.aviso = 'No se pudo guardar en tu cuenta. El récord queda solo en este navegador.';
+    else G.aviso = 'No se pudo guardar este récord: se perderá al cerrar la página.';
+    pintarGuardado();
+  }
+
+  function medioGuardado() { return G.nube ? 'cuenta' : G.local ? 'navegador' : 'memoria'; }
+  function pintarGuardado() {
+    const texto = G.aviso || {
+      cuenta: 'Tu récord se guarda en tu cuenta de Claude.',
+      navegador: 'Tu récord se guarda solo en este navegador.',
+      memoria: 'Aquí no se puede guardar el récord: se perderá al cerrar la página.',
+    }[medioGuardado()];
+    document.querySelectorAll('[data-guardado]').forEach((el) => { el.textContent = texto; });
+  }
+  function pintarRecord() {
+    document.querySelectorAll('[data-record]').forEach((el) => { el.textContent = String(G.record); });
+  }
+
+  // ------------------------------------------------------------------- Mundo
+  let W = 0, H = 0, u = 1, dpr = 1, cielo = null;
+  let estado = 'inicio'; // inicio | jugando | pausa | fin
+  let puntos = 0, tiempo = 0, reloj = 0, desplaz = 0;
+  let tMurci = 0, tLuci = 0, sacudida = 0, finVisible = false, haArrastrado = false, tPista = 0;
+  const J = { x: 0, obj: 0, y: 0, incl: 0 }; // el farolillo
+  const murcis = [], lucis = [], chispas = [], rotulos = [];
+  const teclas = { izq: false, der: false };
+  let arrastre = null;
+
+  const estrellas = Array.from({ length: 70 }, () => ({
+    fx: Math.random(), fy: Math.random(), tam: azar(0.6, 1.7), a: azar(0.35, 0.95),
+    prof: azar(0.4, 1), vel: azar(1, 3), fase: azar(0, TAU),
+  }));
+
+  const margen = () => 16 + 20 * u;
+  const yJuego = () => H - Math.max(118, H * 0.2);
+  const dificultad = () => Math.min(tiempo / 60, 1);
+  const velocidad = () => H * 0.4 * (1 + dificultad() * 1.1);
+  const intervalo = () => 0.95 - dificultad() * 0.53;
+
+  function medir() {
+    const caja = raiz.getBoundingClientRect();
+    const w = Math.max(200, caja.width), h = Math.max(200, caja.height);
+    if (W > 0 && w !== W) { J.x *= w / W; J.obj *= w / W; }
+    W = w; H = h;
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    lienzo.width = Math.round(W * dpr);
+    lienzo.height = Math.round(H * dpr);
+    u = clamp(W / 400, 0.8, 1.35);
+    cielo = ctx.createLinearGradient(0, 0, 0, H);
+    cielo.addColorStop(0, C.noche);
+    cielo.addColorStop(0.58, C.malva);
+    cielo.addColorStop(1, C.ocaso);
+    J.obj = clamp(J.obj, margen(), W - margen());
+    J.x = clamp(J.x, margen(), W - margen());
+  }
+
+  function crearMurci() {
+    const r = azar(15, 24) * u;
+    const apuntado = Math.random() < 0.4; // algunos salen sobre el farolillo: quedarse quieto no sirve
+    const x = clamp(apuntado ? J.x + azar(-34, 34) * u : azar(0, W), r * 1.7, W - r * 1.7);
+    const deriva = Math.random() < 0.35 ? azar(40, 110) * u * (Math.random() < 0.5 ? -1 : 1) : 0;
+    murcis.push({ x, y: -r * 2, r, vx: deriva, k: azar(0.9, 1.2), fase: azar(0, TAU) });
+  }
+  function crearLuci() {
+    lucis.push({ x0: azar(margen() + 18 * u, W - margen() - 18 * u), x: 0, y: -20, fase: azar(0, TAU) });
+  }
+  function estallido(x, y, color, n) {
+    if (pocoMovimiento) n = Math.ceil(n / 3);
+    for (let i = 0; i < n; i++) {
+      const ang = azar(0, TAU), v = azar(40, 220) * u;
+      chispas.push({ x, y, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v - 60 * u, vida: azar(0.35, 0.8), max: 0.8, color, tam: azar(1.5, 3.5) * u });
+    }
+  }
+
+  // ------------------------------------------------------------------ Estados
+  function pintarPuntos() { puntosEl.textContent = String(puntos); }
+  function pintarEstado() {
+    panelInicio.hidden = estado !== 'inicio';
+    panelPausa.hidden = estado !== 'pausa';
+    panelFin.hidden = !(estado === 'fin' && finVisible);
+    hud.hidden = estado === 'inicio';
+    btnPausa.hidden = estado !== 'jugando';
+    pista.hidden = !(estado === 'jugando' && tPista > 0 && !haArrastrado);
+  }
+  function enfocar(boton) { try { boton.focus({ preventScroll: true }); } catch (e) { /* sin foco */ } }
+
+  function empezar() {
+    murcis.length = 0; lucis.length = 0; chispas.length = 0; rotulos.length = 0;
+    puntos = 0; tiempo = 0; tMurci = 0.9; tLuci = 2.2; sacudida = 0; finVisible = false;
+    J.x = J.obj = W / 2; J.incl = 0;
+    teclas.izq = teclas.der = false; arrastre = null;
+    tPista = haArrastrado ? 0 : 4;
+    notaActualizado.hidden = true;
+    estado = 'jugando';
+    pintarPuntos(); pintarEstado();
+  }
+  function pausar() {
+    if (estado !== 'jugando') return;
+    estado = 'pausa'; arrastre = null; teclas.izq = teclas.der = false;
+    pintarEstado(); enfocar($('btnSeguir'));
+  }
+  function seguir() {
+    if (estado !== 'pausa') return;
+    notaActualizado.hidden = true;
+    estado = 'jugando'; ultimo = 0;
+    pintarEstado();
+  }
+  function chocar() {
+    estado = 'fin'; arrastre = null;
+    sacudida = pocoMovimiento ? 0 : 0.35;
+    estallido(J.x, J.y, C.brasa, 24);
+    try { if (navigator.vibrate) navigator.vibrate(90); } catch (e) { /* sin vibración */ }
+    const esRecord = puntos > G.record;
+    if (esRecord) registrarRecord(puntos);
+    $('puntosFin').textContent = String(puntos);
+    $('insignia').hidden = !esRecord;
+    pintarEstado();
+    setTimeout(() => {
+      if (estado !== 'fin') return;
+      finVisible = true; pintarEstado(); enfocar($('btnOtra'));
+    }, 600);
+  }
+
+  // --------------------------------------------------------------- Simulación
+  function actualizar(dt) {
+    reloj += dt;
+    const jugando = estado === 'jugando';
+    const v = velocidad();
+    const suave = (k) => 1 - Math.exp(-dt * k);
+
+    if (jugando) {
+      tiempo += dt;
+      if (tPista > 0) { tPista -= dt; if (tPista <= 0) pintarEstado(); }
+      const dir = (teclas.der ? 1 : 0) - (teclas.izq ? 1 : 0);
+      if (dir) J.obj = clamp(J.obj + dir * 560 * u * dt, margen(), W - margen());
+      const antes = J.x;
+      J.x += (J.obj - J.x) * suave(30);
+      const vx = dt > 0 ? (J.x - antes) / dt : 0;
+      J.incl += (clamp(vx / 900, -0.35, 0.35) - J.incl) * suave(10);
+      J.y += (yJuego() - J.y) * suave(6);
+    } else if (estado === 'inicio') {
+      J.obj = W / 2 + Math.sin(reloj * 0.7) * 14 * u;
+      J.x += (J.obj - J.x) * suave(4);
+      J.incl = Math.sin(reloj * 0.7 + 1.2) * 0.06;
+      J.y += (H * 0.27 + Math.sin(reloj * 1.3) * 6 * u - J.y) * suave(5);
+    } else if (estado === 'fin') {
+      J.y = Math.min(J.y + 80 * u * dt, H + 80);
+      J.incl += 0.9 * dt;
+    }
+
+    desplaz += (jugando ? v * 0.05 : H * 0.006) * dt;
+    if (sacudida > 0) sacudida = Math.max(0, sacudida - dt);
+
+    if (jugando) {
+      tMurci -= dt;
+      if (tMurci <= 0) { crearMurci(); tMurci += intervalo() * azar(0.8, 1.2); }
+      tLuci -= dt;
+      if (tLuci <= 0) { crearLuci(); tLuci += azar(2.2, 3.8); }
+    }
+
+    for (let i = murcis.length - 1; i >= 0; i--) {
+      const b = murcis[i];
+      b.y += v * b.k * dt;
+      b.x += b.vx * dt;
+      if (b.x < b.r * 1.7) { b.x = b.r * 1.7; b.vx = Math.abs(b.vx); }
+      if (b.x > W - b.r * 1.7) { b.x = W - b.r * 1.7; b.vx = -Math.abs(b.vx); }
+      if (b.y - b.r * 2 > H) {
+        murcis.splice(i, 1);
+        if (jugando) { puntos += 1; pintarPuntos(); }
+        continue;
+      }
+      if (jugando) {
+        // Zona de choque con forma de elipse: alas anchas, cuerpo bajo.
+        const dx = (b.x - J.x) / (b.r * 1.2 + 12 * u);
+        const dy = (b.y - J.y) / (b.r * 0.6 + 14 * u);
+        if (dx * dx + dy * dy < 1) { chocar(); break; }
+      }
+    }
+
+    for (let i = lucis.length - 1; i >= 0; i--) {
+      const l = lucis[i];
+      l.y += v * 0.8 * dt;
+      l.x = l.x0 + Math.sin(reloj * 2.2 + l.fase) * 18 * u;
+      if (estado === 'jugando' && Math.hypot(l.x - J.x, l.y - J.y) < 38 * u) {
+        lucis.splice(i, 1);
+        puntos += 5; pintarPuntos();
+        estallido(l.x, l.y, C.luci, 10);
+        rotulos.push({ x: l.x, y: l.y, vida: 0.8 });
+      } else if (l.y > H + 30) lucis.splice(i, 1);
+    }
+
+    for (let i = chispas.length - 1; i >= 0; i--) {
+      const p = chispas[i];
+      p.vida -= dt;
+      if (p.vida <= 0) { chispas.splice(i, 1); continue; }
+      p.vy += 320 * u * dt;
+      p.x += p.vx * dt; p.y += p.vy * dt;
+    }
+    for (let i = rotulos.length - 1; i >= 0; i--) {
+      const r = rotulos[i];
+      r.vida -= dt; r.y -= 46 * u * dt;
+      if (r.vida <= 0) rotulos.splice(i, 1);
+    }
+  }
+
+  // ------------------------------------------------------------------- Dibujo
+  function disco(x, y, r) { ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill(); }
+  function tapa(x, y, w, h) {
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, h, h * 0.35); else ctx.rect(x, y, w, h);
+    ctx.fill();
+  }
+
+  function dibujarFondo() {
+    // Luna
+    const lx = W * 0.8, ly = H * 0.13, lr = 44 * u;
+    const halo = ctx.createRadialGradient(lx, ly, lr * 0.6, lx, ly, lr * 2.4);
+    halo.addColorStop(0, conAlfa(C.llama, 0.16));
+    halo.addColorStop(1, conAlfa(C.llama, 0));
+    ctx.fillStyle = halo; disco(lx, ly, lr * 2.4);
+    ctx.fillStyle = conAlfa(C.llama, 0.2); disco(lx, ly, lr);
+    // Estrellas: bajan despacio para que se note que el farolillo sube
+    ctx.fillStyle = C.llama;
+    for (const e of estrellas) {
+      const y = (((e.fy * H + desplaz * e.prof) % H) + H) % H;
+      const brillo = pocoMovimiento ? 1 : 0.65 + 0.35 * Math.sin(reloj * e.vel + e.fase);
+      ctx.globalAlpha = e.a * brillo * (1 - (y / H) * 0.85);
+      disco(e.fx * W, y, e.tam * u);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function dibujarMurci(b) {
+    const r = b.r;
+    const punta = -Math.sin(reloj * 13 + b.fase) * r * 0.75; // altura de la punta del ala
+    ctx.save();
+    ctx.translate(b.x, b.y);
+    ctx.lineJoin = 'round';
+    ctx.fillStyle = C.tinta;
+    ctx.strokeStyle = C.brasa;
+    ctx.lineWidth = 2 * u;
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 0.25);
+    ctx.quadraticCurveTo(r * 0.9, -r * 0.6 + punta * 0.6, r * 1.7, punta);
+    ctx.quadraticCurveTo(r * 1.35, punta * 0.5 + r * 0.15, r * 1.15, r * 0.45 + punta * 0.3);
+    ctx.quadraticCurveTo(r * 0.9, r * 0.1 + punta * 0.2, r * 0.6, r * 0.5 + punta * 0.15);
+    ctx.quadraticCurveTo(r * 0.4, r * 0.2, 0, r * 0.45);
+    ctx.quadraticCurveTo(-r * 0.4, r * 0.2, -r * 0.6, r * 0.5 + punta * 0.15);
+    ctx.quadraticCurveTo(-r * 0.9, r * 0.1 + punta * 0.2, -r * 1.15, r * 0.45 + punta * 0.3);
+    ctx.quadraticCurveTo(-r * 1.35, punta * 0.5 + r * 0.15, -r * 1.7, punta);
+    ctx.quadraticCurveTo(-r * 0.9, -r * 0.6 + punta * 0.6, 0, -r * 0.25);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    // Cuerpo y orejas
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.38, -r * 0.2); ctx.lineTo(-r * 0.3, -r * 0.9); ctx.lineTo(-r * 0.04, -r * 0.5);
+    ctx.lineTo(r * 0.04, -r * 0.5); ctx.lineTo(r * 0.3, -r * 0.9); ctx.lineTo(r * 0.38, -r * 0.2);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(0, 0, r * 0.42, r * 0.56, 0, 0, TAU); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = C.papel;
+    disco(-r * 0.16, -r * 0.14, r * 0.09);
+    disco(r * 0.16, -r * 0.14, r * 0.09);
+    ctx.restore();
+  }
+
+  function dibujarLuci(l) {
+    const R = 15 * u * (0.75 + 0.25 * Math.sin(reloj * 6 + l.fase));
+    const g = ctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, R);
+    g.addColorStop(0, conAlfa(C.luci, 0.95));
+    g.addColorStop(0.3, conAlfa(C.luci, 0.45));
+    g.addColorStop(1, conAlfa(C.luci, 0));
+    ctx.fillStyle = g; disco(l.x, l.y, R);
+    ctx.fillStyle = C.llama; disco(l.x, l.y, 3.2 * u);
+  }
+
+  function dibujarFarol() {
+    const r = 20 * u;
+    const encendido = estado !== 'fin';
+    const parpadeo = pocoMovimiento ? 1 : 0.93 + 0.07 * Math.sin(reloj * 17) * Math.sin(reloj * 7.3);
+    ctx.save();
+    ctx.translate(J.x, J.y);
+    ctx.rotate(J.incl);
+    if (encendido) {
+      const halo = ctx.createRadialGradient(0, 0, r * 0.4, 0, 0, r * 4.4 * parpadeo);
+      halo.addColorStop(0, conAlfa(C.papel, 0.45));
+      halo.addColorStop(1, conAlfa(C.papel, 0));
+      ctx.fillStyle = halo; disco(0, 0, r * 4.4);
+    }
+    // Borla
+    ctx.strokeStyle = C.brasa; ctx.lineWidth = 2 * u;
+    ctx.beginPath(); ctx.moveTo(0, r * 1.25); ctx.lineTo(0, r * 1.9); ctx.stroke();
+    ctx.fillStyle = C.brasa;
+    ctx.beginPath(); ctx.ellipse(0, r * 2.08, r * 0.17, r * 0.32, 0, 0, TAU); ctx.fill();
+    // Cuerpo de papel
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.5, -r * 1.1);
+    ctx.bezierCurveTo(-r * 1.25, -r * 0.6, -r * 1.25, r * 0.6, -r * 0.5, r * 1.1);
+    ctx.lineTo(r * 0.5, r * 1.1);
+    ctx.bezierCurveTo(r * 1.25, r * 0.6, r * 1.25, -r * 0.6, r * 0.5, -r * 1.1);
+    ctx.closePath();
+    if (encendido) {
+      const papel = ctx.createRadialGradient(0, r * 0.3, r * 0.1, 0, 0, r * 1.35);
+      papel.addColorStop(0, C.llama);
+      papel.addColorStop(0.55, C.papel);
+      papel.addColorStop(1, C.brasa);
+      ctx.fillStyle = papel;
+    } else ctx.fillStyle = C.malva;
+    ctx.fill();
+    // Varillas
+    ctx.strokeStyle = conAlfa(C.tinta, 0.28); ctx.lineWidth = 1.5 * u;
+    for (const k of [-0.45, 0, 0.45]) {
+      ctx.beginPath();
+      ctx.moveTo(k * r * 0.9, -r * 1.1);
+      ctx.quadraticCurveTo(k * r * 2.2, 0, k * r * 0.9, r * 1.1);
+      ctx.stroke();
+    }
+    // Aros
+    ctx.fillStyle = C.tinta;
+    tapa(-r * 0.6, -r * 1.3, r * 1.2, r * 0.26);
+    tapa(-r * 0.6, r * 1.04, r * 1.2, r * 0.26);
+    ctx.restore();
+  }
+
+  function dibujar() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = cielo;
+    ctx.fillRect(0, 0, W, H);
+    ctx.save();
+    if (sacudida > 0) {
+      const m = sacudida * 18 * u;
+      ctx.translate(azar(-m, m), azar(-m, m));
+    }
+    dibujarFondo();
+    for (const l of lucis) dibujarLuci(l);
+    for (const b of murcis) dibujarMurci(b);
+    dibujarFarol();
+    for (const p of chispas) {
+      ctx.globalAlpha = clamp(p.vida / p.max, 0, 1);
+      ctx.fillStyle = p.color; disco(p.x, p.y, p.tam);
+    }
+    ctx.textAlign = 'center';
+    ctx.font = `${Math.round(24 * u)}px "Bagel Fat One", "Arial Rounded MT Bold", system-ui, sans-serif`;
+    for (const r of rotulos) {
+      ctx.globalAlpha = clamp(r.vida / 0.4, 0, 1);
+      ctx.fillStyle = C.tinta; ctx.fillText('+5', r.x, r.y + 2 * u);
+      ctx.fillStyle = C.luci; ctx.fillText('+5', r.x, r.y);
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  let ultimo = 0;
+  function cuadro(ahora) {
+    const dt = ultimo ? Math.min((ahora - ultimo) / 1000, 1 / 30) : 0;
+    ultimo = ahora;
+    if (estado !== 'pausa') actualizar(dt);
+    dibujar();
+    requestAnimationFrame(cuadro);
+  }
+
+  // ----------------------------------------------------------------- Controles
+  // Arrastre relativo: el farolillo se mueve lo que se mueve el dedo, toque donde
+  // toque, así el pulgar no lo tapa.
+  raiz.addEventListener('pointerdown', (e) => {
+    if (estado !== 'jugando' || arrastre || e.target.closest('button')) return;
+    arrastre = { id: e.pointerId, x: e.clientX, recorrido: 0 };
+    try { raiz.setPointerCapture(e.pointerId); } catch (err) { /* sin captura */ }
+    e.preventDefault();
+  });
+  raiz.addEventListener('pointermove', (e) => {
+    if (!arrastre || e.pointerId !== arrastre.id || estado !== 'jugando') return;
+    const dx = e.clientX - arrastre.x;
+    arrastre.x = e.clientX;
+    arrastre.recorrido += Math.abs(dx);
+    J.obj = clamp(J.obj + dx * 1.3, margen(), W - margen());
+    if (!haArrastrado && arrastre.recorrido > 24) { haArrastrado = true; pintarEstado(); }
+  });
+  const soltar = (e) => { if (arrastre && e.pointerId === arrastre.id) arrastre = null; };
+  raiz.addEventListener('pointerup', soltar);
+  raiz.addEventListener('pointercancel', soltar);
+  raiz.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  $('btnJugar').addEventListener('click', empezar);
+  $('btnOtra').addEventListener('click', empezar);
+  $('btnReiniciar').addEventListener('click', empezar);
+  $('btnSeguir').addEventListener('click', seguir);
+  btnPausa.addEventListener('click', pausar);
+
+  // Teclado: un extra para pantallas con teclas; el juego no depende de él.
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') teclas.izq = true;
+    else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') teclas.der = true;
+    else if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') { if (estado === 'jugando') pausar(); else seguir(); }
+    else if ((e.key === ' ' || e.key === 'Enter') && !(document.activeElement && document.activeElement.tagName === 'BUTTON')) {
+      e.preventDefault();
+      if (estado === 'jugando') pausar();
+      else if (estado === 'pausa') seguir();
+      else if (estado === 'inicio' || finVisible) empezar();
+    }
+  });
+  window.addEventListener('keyup', (e) => {
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') teclas.izq = false;
+    else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') teclas.der = false;
+  });
+
+  // Al salir de la pantalla (otra app, bloqueo, otra pestaña) la partida se pausa.
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pausar(); });
+  window.addEventListener('blur', pausar);
+  window.addEventListener('resize', medir);
+  if (window.ResizeObserver) new ResizeObserver(medir).observe(raiz);
+
+  // ------------------------------------------------------------------ Arranque
+  let arrancado = false;
+  function arrancar(previo) {
+    if (arrancado) return;
+    arrancado = true;
+    medir();
+    J.x = J.obj = W / 2;
+    J.y = H * 0.27;
+    $('version').textContent = 'versión ' + VERSION;
+    G.local = probarLocal();
+    G.record = sanear(leerLocal());
+    // Si el juego se actualiza con una partida abierta, se retoma en pausa.
+    if (previo && (previo.estado === 'jugando' || previo.estado === 'pausa') && Number.isFinite(previo.puntos)) {
+      puntos = sanear(previo.puntos);
+      tiempo = Math.max(0, Number(previo.tiempo) || 0);
+      J.x = J.obj = clamp((Number(previo.fx) || 0.5) * W, margen(), W - margen());
+      J.y = yJuego();
+      tMurci = 1.2; tLuci = 2.5;
+      estado = 'pausa';
+      notaActualizado.hidden = false;
+    }
+    pintarPuntos(); pintarRecord(); pintarGuardado(); pintarEstado();
+    conectarNube();
+    requestAnimationFrame(cuadro);
+  }
+
+  // Diagnóstico de solo lectura (lo usan las pruebas automáticas).
+  window.farolillo = Object.freeze({
+    version: VERSION,
+    estado: () => ({
+      estado, puntos, tiempo, record: G.record, guardado: medioGuardado(), aviso: G.aviso,
+      ancho: W, alto: H, panelFin: finVisible,
+      farol: { x: J.x, y: J.y, objetivo: J.obj },
+      murcielagos: murcis.map((b) => ({ x: b.x, y: b.y, r: b.r, vx: b.vx, vy: velocidad() * b.k })),
+      luciernagas: lucis.map((l) => ({ x: l.x, y: l.y })),
+    }),
+  });
+
+  // El visor de Claude puede cambiar la página por una versión nueva mientras está
+  // abierta: se le entrega la partida en curso para no perderla.
+  const hot = window.claude && window.claude.hot;
+  try {
+    if (hot && typeof hot.snapshot === 'function') {
+      hot.snapshot(() => ({ estado, puntos, tiempo, fx: W ? J.obj / W : 0.5 }));
+    }
+  } catch (e) { /* sin actualización en vivo */ }
+  if (hot && typeof hot.ready === 'function') {
+    try { hot.ready(arrancar); } catch (e) { arrancar({}); }
+    setTimeout(() => arrancar({}), 1500); // por si el visor no responde
+  } else {
+    arrancar((hot && hot.data) || {});
+  }
+})();
+</script>
